@@ -17,7 +17,8 @@ const UserSearch = () => {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+  // Allow empty searches to list ALL users (server returns LIKE '%%')
+  // This makes stored XSS easier to demonstrate when a malicious name exists in DB.
 
     setLoading(true);
     setHasSearched(true);

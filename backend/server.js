@@ -3,7 +3,6 @@ import mysql from 'mysql2/promise';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import session from 'express-session';
 import { exec } from 'child_process';
@@ -191,27 +190,35 @@ app.get('/api/transactions/:userId', async (req, res) => {
 // Money transfer - CSRF Vulnerable
 app.post('/api/transfer', async (req, res) => {
   const { fromUserId, toUsername, amount, description } = req.body;
-  
+
   try {
     // VULNERABLE: No CSRF protection
+    // Change: derive sender from active session when available so attacks apply to the currently logged-in user.
+    // Fallback to provided fromUserId to keep original demo behavior working.
+    const senderUserId = (req.session && req.session.userId) ? req.session.userId : fromUserId;
+
+    if (!senderUserId) {
+      return res.status(400).json({ message: 'Missing sender user context' });
+    }
+
     const [toUserRows] = await db.execute('SELECT id FROM users WHERE username = ?', [toUsername]);
-    
+
     if (toUserRows.length === 0) {
       return res.status(404).json({ message: 'Recipient not found' });
     }
-    
+
     const toUserId = toUserRows[0].id;
-    
+
     // Update balances
-    await db.execute('UPDATE users SET balance = balance - ? WHERE id = ?', [amount, fromUserId]);
+    await db.execute('UPDATE users SET balance = balance - ? WHERE id = ?', [amount, senderUserId]);
     await db.execute('UPDATE users SET balance = balance + ? WHERE id = ?', [amount, toUserId]);
-    
+
     // Record transaction
     await db.execute(
       'INSERT INTO transactions (user_id, type, amount, recipient_id, description) VALUES (?, ?, ?, ?, ?)',
-      [fromUserId, 'transfer', amount, toUserId, description]
+      [senderUserId, 'transfer', amount, toUserId, description]
     );
-    
+
     res.json({ success: true, message: 'Transfer completed successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -261,7 +268,8 @@ app.get('/api/search', async (req, res) => {
 app.get('/api/admin/users', async (req, res) => {
   try {
     // VULNERABLE: No authentication check
-    const [rows] = await db.execute('SELECT id, username, email, full_name, balance FROM users');
+    // For demo purposes, include password column so stored XSS can exfiltrate credentials from search results
+    const [rows] = await db.execute('SELECT id, username, email, password, full_name, balance FROM users');
     res.json(rows);
   } catch (error) {
     res.status(500).json({ message: error.message });

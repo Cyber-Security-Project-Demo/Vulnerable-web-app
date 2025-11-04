@@ -5,8 +5,8 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server-simple.js",
-    "dev": "nodemon server-simple.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
     "original": "node server.js"
   },
   "dependencies": {
