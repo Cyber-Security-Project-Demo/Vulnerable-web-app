@@ -44,7 +44,7 @@ const AttackerPage = ({ onBack }) => {
         credentials: 'include', // This sends the victim's session cookie automatically
         body: JSON.stringify({
           // No fromUserId needed - backend gets it from session cookie
-          toUsername: 'admin',
+          toUsername: 'ycp27',
           amount: 100,
           description: 'Gift voucher claim'
         })
