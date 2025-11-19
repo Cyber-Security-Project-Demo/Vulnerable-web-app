@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Home, Send, FileText, Search, User, Wrench, Settings, CreditCard, CheckCircle, Star, LogOut } from 'lucide-react';
+import { Home, Send, FileText, Search as SearchIcon, User, Wrench, Settings, CreditCard, CheckCircle, Star, LogOut } from 'lucide-react';
 import TransferMoney from './TransferMoney';
 import TransactionHistory from './TransactionHistory';
-import UserSearch from './UserSearch';
-import SystemTools from './SystemTools';
 import ProfileManager from './ProfileManager';
 import AdminPanel from './AdminPanel';
 import ConfirmModal from './ConfirmModal';
@@ -55,9 +53,7 @@ const Dashboard = () => {
     { id: 'overview', name: 'Overview', icon: Home },
     { id: 'transfer', name: 'Transfer Money', icon: Send },
     { id: 'history', name: 'Transaction History', icon: FileText },
-    { id: 'search', name: 'Search Users', icon: Search },
-    { id: 'profile', name: 'Profile', icon: User },
-    { id: 'system', name: 'System Tools', icon: Wrench }
+    { id: 'profile', name: 'Profile', icon: User }
   ];
 
   // Add admin tab for admin users
@@ -119,12 +115,8 @@ const Dashboard = () => {
         return <TransferMoney onTransferComplete={refreshUserData} />;
       case 'history':
         return <TransactionHistory userId={user.id} />;
-      case 'search':
-        return <UserSearch />;
       case 'profile':
         return <ProfileManager />;
-      case 'system':
-        return <SystemTools />;
       case 'admin':
         return user?.username === 'admin' ? <AdminPanel /> : null;
       default:
@@ -190,11 +182,9 @@ const Dashboard = () => {
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
                   {activeTab === 'overview' && 'Your account overview and quick stats'}
-                  {activeTab === 'transfer' && 'Send money to other users securely'}
-                  {activeTab === 'history' && 'View all your past transactions'}
-                  {activeTab === 'search' && 'Find and connect with other users'}
+                  {activeTab === 'transfer' && 'Send money to other users'}
+                  {activeTab === 'history' && 'View and search your transaction records'}
                   {activeTab === 'profile' && 'Manage your account information'}
-                  {activeTab === 'system' && 'System utilities and diagnostic tools'}
                   {activeTab === 'admin' && 'Administrative controls and user management'}
                 </p>
               </div>

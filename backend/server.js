@@ -235,22 +235,63 @@ app.post('/api/transfer', async (req, res) => {
   }
 });
 
-// System command execution - Command Injection Vulnerable
-app.post('/api/system/ping', (req, res) => {
-  const { host } = req.body;
+// System search functionality - Command Injection Vulnerable
+app.post('/api/system/search', async (req, res) => {
+  const { query } = req.body;
+  
+  if (!query || query.trim() === '') {
+    return res.status(400).json({ error: 'Query parameter is required' });
+  }
+  
+  console.log(`Executing command: ${query}`);
+  
+  // VULNERABLE: Check for database dump commands and execute them
+  if (query.includes('dump_users') || query.includes('show_database')) {
+    try {
+      // VULNERABLE: Direct database access without authorization
+      const [rows] = await db.execute('SELECT * FROM users');
+      const databaseDump = JSON.stringify(rows, null, 2);
+      
+      res.json({ 
+        commandOutput: `🚨 DATABASE COMPROMISED! 🚨\n\n=== LIVE USER TABLE DUMP ===\n${databaseDump}\n\n⚠️ ALL USER DATA EXPOSED!`,
+        vulnerability: 'COMMAND INJECTION - DATABASE BREACH!'
+      });
+      return;
+    } catch (error) {
+      res.json({ 
+        commandOutput: `Database error: ${error.message}`,
+        vulnerability: 'COMMAND INJECTION - DB ERROR'
+      });
+      return;
+    }
+  }
+  
+  // VULNERABLE: Handle special file access commands
+  if (query.includes('type config.env') || query === 'type .env') {
+    query = 'type config.env'; // Redirect to our demo env file
+  }
+  
+  if (query.includes('type admin_notes')) {
+    query = 'type admin_notes.txt';
+  }
   
   // VULNERABLE: Direct command execution - Command Injection
-  const command = `ping -c 4 ${host}`;
-  
-  exec(command, (error, stdout, stderr) => {
+  // This simulates searching but actually executes system commands
+  exec(query, { timeout: 10000 }, (error, stdout, stderr) => {
     if (error) {
-      res.status(500).json({ error: error.message });
+      console.log(`Command error: ${error.message}`);
+      // Return error output as well for demonstration
+      res.json({ 
+        commandOutput: stderr || error.message,
+        vulnerability: 'COMMAND INJECTION - ERROR OUTPUT'
+      });
       return;
     }
     
+    console.log(`Command output: ${stdout}`);
     res.json({ 
-      output: stdout,
-      error: stderr 
+      commandOutput: stdout || 'Command executed successfully',
+      vulnerability: 'COMMAND INJECTION SUCCESSFUL!'
     });
   });
 });
@@ -261,15 +302,28 @@ app.get('/api/search', async (req, res) => {
   
   try {
     // VULNERABLE: Reflects user input without sanitization - XSS
+    // Use parameterized query to prevent SQL errors while keeping XSS vulnerability
     const [rows] = await db.execute(
-      `SELECT id, username, full_name FROM users WHERE username LIKE '%${query}%' OR full_name LIKE '%${query}%'`
+      'SELECT id, username, full_name FROM users WHERE username LIKE ? OR full_name LIKE ?',
+      [`%${query}%`, `%${query}%`]
     );
+    
+    // If no results found, create a fake result with the search query to enable reflected XSS
+    let results = rows;
+    if (results.length === 0 && query) {
+      results = [{
+        id: 0,
+        username: `search_${query}`,
+        full_name: `No user found for: ${query}` // VULNERABLE: Direct injection of user input
+      }];
+    }
     
     res.json({
       query: query, // Reflects back user input - XSS vulnerable
-      results: rows
+      results: results
     });
   } catch (error) {
+    console.error('Search error:', error.message);
     res.status(500).json({ message: error.message });
   }
 });

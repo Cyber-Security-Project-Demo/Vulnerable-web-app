@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "amount": 5000.00,
+    "type": "deposit",
+    "description": "Initial deposit",
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  {
+    "id": 2,
+    "username": "john_doe",
+    "amount": -150.00,
+    "type": "withdrawal",
+    "description": "ATM withdrawal",
+    "timestamp": "2024-01-16T14:22:00Z"
+  },
+  {
+    "id": 3,
+    "username": "jane_smith",
+    "amount": -4.50,
+    "type": "purchase",
+    "description": "Coffee purchase",
+    "timestamp": "2024-01-17T08:15:00Z"
+  }
+]

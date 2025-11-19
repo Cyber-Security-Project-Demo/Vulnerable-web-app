@@ -1,0 +1,23 @@
+CONFIDENTIAL - ADMIN NOTES
+==========================
+
+Server Access:
+- Root password: RootPass2024!
+- SSH Key location: /home/admin/.ssh/id_rsa
+- Backup server: 192.168.1.100
+
+Database Info:
+- Admin DB user: db_admin
+- Admin DB pass: DbSecure789!
+- Backup schedule: Daily 2 AM
+
+Security Issues:
+- TODO: Fix SQL injection in login
+- TODO: Update SSL certificates
+- TODO: Patch command injection vulnerability
+
+Emergency Contacts:
+- IT Manager: +1-555-0123
+- Security Team: security@company.com
+
+NEVER SHARE THIS FILE!

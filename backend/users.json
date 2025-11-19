@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "password": "admin123",
+    "email": "admin@insecurebank.com",
+    "ssn": "123-45-6789",
+    "creditCard": "4532-1234-5678-9012",
+    "address": "123 Main St, New York, NY",
+    "balance": 50000.00
+  },
+  {
+    "id": 2,
+    "username": "john_doe",
+    "password": "password",
+    "email": "john@email.com",
+    "ssn": "987-65-4321",
+    "creditCard": "4532-9876-5432-1098",
+    "address": "456 Oak Ave, Los Angeles, CA",
+    "balance": 15000.00
+  },
+  {
+    "id": 3,
+    "username": "jane_smith",
+    "password": "123456",
+    "email": "jane@email.com",
+    "ssn": "555-12-3456",
+    "creditCard": "4532-5555-1234-5678",
+    "address": "789 Pine St, Chicago, IL",
+    "balance": 8500.00
+  },
+  {
+    "id": 4,
+    "username": "bob_wilson",
+    "password": "Bobbbb",
+    "email": "bob@email.com",
+    "ssn": "111-22-3333",
+    "creditCard": "4532-1111-2222-3333",
+    "address": "321 Elm St, Miami, FL",
+    "balance": 25000.00
+  },
+  {
+    "id": 5,
+    "username": "ycp27",
+    "password": "ycp123",
+    "email": "ycp27@email.com",
+    "ssn": "444-55-6666",
+    "creditCard": "4532-4444-5555-6666",
+    "address": "654 Maple Ave, Seattle, WA",
+    "balance": 12500.00
+  },
+  {
+    "id": 6,
+    "username": "sarah_connor",
+    "password": "terminator",
+    "email": "sarah@email.com",
+    "ssn": "777-88-9999",
+    "creditCard": "4532-7777-8888-9999",
+    "address": "987 Future Blvd, Austin, TX",
+    "balance": 35000.00
+  },
+  {
+    "id": 7,
+    "username": "mike_johnson",
+    "password": "qwerty123",
+    "email": "mike@email.com",
+    "ssn": "222-33-4444",
+    "creditCard": "4532-2222-3333-4444",
+    "address": "147 Tech Street, San Francisco, CA",
+    "balance": 18750.00
+  },
+  {
+    "id": 8,
+    "username": "lisa_anderson",
+    "password": "password123",
+    "email": "lisa@email.com",
+    "ssn": "666-77-8888",
+    "creditCard": "4532-6666-7777-8888",
+    "address": "258 Business Ave, Boston, MA",
+    "balance": 42000.00
+  }
+]
