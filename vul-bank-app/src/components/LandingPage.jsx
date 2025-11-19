@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
 
 const LandingPage = () => {
   const [landingData, setLandingData] = useState(null);
@@ -11,10 +11,10 @@ const LandingPage = () => {
 
   const fetchLandingData = async () => {
     try {
-      const response = await axios.get('/api/landing');
+      const response = await axios.get("/api/landing");
       setLandingData(response.data);
     } catch (error) {
-      console.error('Failed to fetch landing data:', error);
+      console.error("Failed to fetch landing data:", error);
     }
   };
 
@@ -48,13 +48,45 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-8">
+      <div className="hero-section-container relative">
+        {/* Background Image Carousel */}
+        <div className="hero-image-carousel">
+          <div className="carousel-track">
+            <div className="carousel-image">
+              <img
+                src="/src/assets/hero-images/hero-1.png"
+                alt="Banking Service 1"
+              />
+            </div>
+            <div className="carousel-image">
+              <img
+                src="/src/assets/hero-images/hero-2.png"
+                alt="Banking Service 2"
+              />
+            </div>
+            <div className="carousel-image">
+              <img
+                src="/src/assets/hero-images/hero-3.png"
+                alt="Banking Service 3"
+              />
+            </div>
+            {/* Duplicate for seamless loop */}
+            <div className="carousel-image">
+              <img
+                src="/src/assets/hero-images/hero-1.png"
+                alt="Banking Service 1"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Hero Content - on top of images */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center relative z-10">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-8 hero-title">
             Your Trusted Financial Partner
           </h1>
-          <p className="text-xl md:text-2xl text-blue-100 mb-12 max-w-3xl mx-auto">
-            Experience secure and reliable banking services with InsecureBank. 
+          <p className="text-xl md:text-2xl text-blue-100 mb-12 max-w-3xl mx-auto hero-subtitle">
+            Experience secure and reliable banking services with InsecureBank.
             Manage your finances with confidence.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -88,15 +120,25 @@ const LandingPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {landingData?.features?.map((feature, index) => (
-              <div key={index} className="bg-white/10 backdrop-blur-md rounded-xl p-6 text-center border border-white/20">
+              <div
+                key={index}
+                className="bg-white/10 backdrop-blur-md rounded-xl p-6 text-center border border-white/20"
+              >
                 <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white text-2xl font-bold">{index + 1}</span>
+                  <span className="text-white text-2xl font-bold">
+                    {index + 1}
+                  </span>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">{feature}</h3>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  {feature}
+                </h3>
                 <p className="text-blue-100">
-                  {index === 0 && "Industry-leading security to protect your assets."}
-                  {index === 1 && "24/7 customer support for all your banking needs."}
-                  {index === 2 && "Access your account from any device, anywhere."}
+                  {index === 0 &&
+                    "Industry-leading security to protect your assets."}
+                  {index === 1 &&
+                    "24/7 customer support for all your banking needs."}
+                  {index === 2 &&
+                    "Access your account from any device, anywhere."}
                   {index === 3 && "Fast and secure transactions worldwide."}
                 </p>
               </div>
@@ -110,15 +152,23 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-white mb-2">1M+</div>
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2">
+                1M+
+              </div>
               <div className="text-xl text-blue-100">Happy Customers</div>
             </div>
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-white mb-2">$50B+</div>
-              <div className="text-xl text-blue-100">Assets Under Management</div>
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2">
+                $50B+
+              </div>
+              <div className="text-xl text-blue-100">
+                Assets Under Management
+              </div>
             </div>
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-white mb-2">99.9%</div>
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2">
+                99.9%
+              </div>
               <div className="text-xl text-blue-100">Uptime Guarantee</div>
             </div>
           </div>
@@ -130,7 +180,9 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center text-blue-100">
             <p>&copy; 2025 InsecureBank. All rights reserved.</p>
-            <p className="mt-2 text-sm">Trusted financial services since 2010</p>
+            <p className="mt-2 text-sm">
+              Trusted financial services since 2010
+            </p>
           </div>
         </div>
       </footer>
