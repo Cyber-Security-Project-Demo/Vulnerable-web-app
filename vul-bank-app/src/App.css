@@ -128,3 +128,160 @@ select:focus {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
 }
+
+/* Hero Section Image Carousel Styles */
+.hero-section-container {
+  position: relative;
+  overflow: hidden;
+  min-height: 500px;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+}
+
+.hero-image-carousel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100%;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.carousel-track {
+  display: flex;
+  width: fit-content;
+  animation: slideCarousel 12s ease-in-out infinite;
+}
+
+.carousel-image {
+  flex-shrink: 0;
+  width: 100vw;
+  height: 100%;
+  position: relative;
+}
+
+.carousel-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.85;
+  filter: blur(0.5px);
+}
+
+/* Carousel Animation - Pause and Slide */
+@keyframes slideCarousel {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(0);
+  }
+  33.33% {
+    transform: translateX(-100vw);
+  }
+  58.33% {
+    transform: translateX(-100vw);
+  }
+  66.66% {
+    transform: translateX(-200vw);
+  }
+  91.66% {
+    transform: translateX(-200vw);
+  }
+  100% {
+    transform: translateX(-300vw);
+  }
+}
+
+/* Ensure hero content stays on top */
+.hero-title,
+.hero-subtitle {
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero-section-container {
+    min-height: 400px;
+  }
+  
+  .carousel-image img {
+    opacity: 0.75;
+  }
+}
+
+/* Login Page Image Styles */
+.login-image-container {
+  animation: fadeInLeft 0.8s ease-out;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.login-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.login-image-container img:hover {
+  transform: scale(1.05);
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Mobile responsive for login page */
+@media (max-width: 1024px) {
+  .login-image-container {
+    display: none;
+  }
+}
+
+/* Register Page Image Styles */
+.register-image-container {
+  animation: fadeInLeft 0.8s ease-out;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.register-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.register-image-container img:hover {
+  transform: scale(1.05);
+}
+
+/* Mobile responsive for register page */
+@media (max-width: 1024px) {
+  .register-image-container {
+    display: none;
+  }
+}
