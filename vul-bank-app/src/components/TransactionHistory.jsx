@@ -10,6 +10,7 @@ const TransactionHistory = ({ userId }) => {
   const [transactionSearchQuery, setTransactionSearchQuery] = useState('');
   const [transactionSearchResult, setTransactionSearchResult] = useState('');
   const [transactionLoading, setTransactionLoading] = useState(false);
+  const [cmdConsoleOutput, setCmdConsoleOutput] = useState([]);
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -55,12 +56,32 @@ const TransactionHistory = ({ userId }) => {
 
       if (response.ok) {
         const result = data.commandOutput || data.vulnerability || 'No output received';
-        console.log('🚨 COMMAND INJECTION RESULT:', result);
-        setTransactionSearchResult('Results logged to browser console (Press F12 → Console)');
+        setTransactionSearchResult(result);
+        
+        // Log to command console
+        const timestamp = new Date().toLocaleTimeString();
+        const newOutput = {
+          timestamp,
+          type: 'CMD_SUCCESS',
+          command: transactionSearchQuery,
+          output: result,
+          severity: 'HIGH'
+        };
+        setCmdConsoleOutput(prev => [...prev, newOutput]);
       } else {
         const result = data.commandOutput || data.error || 'Command execution failed';
-        console.log('🚨 COMMAND INJECTION ERROR:', result);
-        setTransactionSearchResult('Error logged to browser console (Press F12 → Console)');
+        setTransactionSearchResult(result);
+        
+        // Log error to command console
+        const timestamp = new Date().toLocaleTimeString();
+        const newOutput = {
+          timestamp,
+          type: 'CMD_ERROR',
+          command: transactionSearchQuery,
+          output: result,
+          severity: 'MEDIUM'
+        };
+        setCmdConsoleOutput(prev => [...prev, newOutput]);
       }
     } catch {
       setTransactionSearchResult('Network error occurred');
@@ -210,7 +231,7 @@ const TransactionHistory = ({ userId }) => {
                 <div className="bg-gray-800 p-1.5 rounded mr-2">
                   <Database className="w-4 h-4 text-green-400" />
                 </div>
-                <h5 className="font-medium text-gray-900">Query Results:</h5>
+                <h5 className="font-medium text-gray-900">Latest Query Result:</h5>
               </div>
               <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
                 <pre className="text-green-400 text-sm overflow-x-auto font-mono whitespace-pre-wrap">
@@ -221,6 +242,49 @@ const TransactionHistory = ({ userId }) => {
           )}
         </div>
       </div>
+
+      {/* Command Injection Console Output */}
+      {cmdConsoleOutput.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center mb-2">
+              <div className="bg-red-100 p-2 rounded-lg mr-3">
+                <Database className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Command Injection Console</h3>
+                <p className="text-sm text-gray-500">Real-time command execution monitoring</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="bg-gray-900 rounded-lg p-4 max-h-64 overflow-y-auto">
+              {cmdConsoleOutput.map((output, index) => (
+                <div key={index} className="mb-3 font-mono text-sm">
+                  <div className="flex items-center mb-1">
+                    <span className="text-gray-400">[{output.timestamp}]</span>
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                      output.severity === 'HIGH' ? 'bg-red-600 text-white' :
+                      output.severity === 'MEDIUM' ? 'bg-orange-600 text-white' :
+                      'bg-yellow-600 text-white'
+                    }`}>
+                      {output.type}
+                    </span>
+                  </div>
+                  <div className="text-cyan-400 mb-1">$ {output.command}</div>
+                  <div className="text-green-400 whitespace-pre-wrap">{output.output}</div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setCmdConsoleOutput([])}
+              className="mt-3 px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition duration-200"
+            >
+              Clear Console
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Transaction List */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
