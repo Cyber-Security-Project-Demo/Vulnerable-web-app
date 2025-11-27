@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/useAuth';
+import { useXSSConsole } from '../contexts/XSSConsoleContext';
 import { Search as SearchIcon, User, Send, DollarSign } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 
 const TransferMoney = () => {
   const { user } = useAuth();
+  const { xssConsoleOutput, addXSSOutput, clearXSSOutput } = useXSSConsole();
   const [formData, setFormData] = useState({
     toUsername: '',
     amount: '',
@@ -19,6 +21,9 @@ const TransferMoney = () => {
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [userLoading, setUserLoading] = useState(false);
   const [hasUserSearched, setHasUserSearched] = useState(false);
+
+
+
 
   const handleChange = (e) => {
     setFormData({
@@ -38,6 +43,25 @@ const TransferMoney = () => {
     setUserLoading(true);
     setHasUserSearched(true);
 
+    // Check for XSS patterns and log to web console
+    const xssPatterns = [
+      /<script/i, /<img.*onerror/i, /<svg.*onload/i, /<iframe/i, 
+      /javascript:/i, /alert\(/i, /document\./i, /window\./i
+    ];
+    
+    const isXssAttempt = xssPatterns.some(pattern => pattern.test(userSearchQuery));
+    
+    if (isXssAttempt) {
+      const timestamp = new Date().toLocaleTimeString();
+      const newOutput = {
+        timestamp,
+        type: 'XSS_DETECTED',
+        message: `XSS payload detected: ${userSearchQuery}`,
+        severity: 'HIGH'
+      };
+      addXSSOutput(newOutput);
+    }
+
     try {
       // VULNERABLE: Query parameter not sanitized - XSS vulnerability
       const response = await fetch(`http://localhost:5000/api/search?query=${encodeURIComponent(userSearchQuery)}`, {
@@ -47,6 +71,17 @@ const TransferMoney = () => {
       if (response.ok) {
         const data = await response.json();
         setUserSearchResults(data.results || []);
+        
+        if (isXssAttempt) {
+          const timestamp = new Date().toLocaleTimeString();
+          const newOutput = {
+            timestamp,
+            type: 'XSS_EXECUTED',
+            message: 'XSS payload will execute when results are rendered',
+            severity: 'CRITICAL'
+          };
+          addXSSOutput(newOutput);
+        }
       } else {
         setUserSearchResults([]);
       }
@@ -186,11 +221,24 @@ const TransferMoney = () => {
                           @<span dangerouslySetInnerHTML={{ __html: searchUser.username }} /> {/* VULNERABLE: XSS */}
                         </p>
                         {/* Additional XSS execution point for image-based payloads */}
-                        {!window.xssExecutionGuard && (
+                        {!window[`xss_${searchUser.id}`] && (
                           <div 
                             dangerouslySetInnerHTML={{ __html: searchUser.full_name }} 
                             style={{ position: 'absolute', left: '-9999px', visibility: 'hidden' }}
-                            ref={() => { window.xssExecutionGuard = true; }}
+                            ref={() => { 
+                              if (!window[`xss_${searchUser.id}`]) {
+                                window[`xss_${searchUser.id}`] = true;
+                                // Log XSS execution to web console
+                                const timestamp = new Date().toLocaleTimeString();
+                                const newOutput = {
+                                  timestamp,
+                                  type: 'XSS_RENDERED',
+                                  message: `XSS payload executed for user: ${searchUser.username}`,
+                                  severity: 'CRITICAL'
+                                };
+                                addXSSOutput(newOutput);
+                              }
+                            }}
                           />
                         )}
                       </div>
@@ -208,6 +256,58 @@ const TransferMoney = () => {
           </div>
         )}
       </div>
+
+      {/* XSS Console Output */}
+      {xssConsoleOutput.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center mb-2">
+              <div className="bg-red-100 p-2 rounded-lg mr-3">
+                <SearchIcon className="w-5 h-5 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900">XSS Detection Console</h3>
+                <p className="text-sm text-gray-500">Real-time XSS attack monitoring and execution logs</p>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-gray-500">{xssConsoleOutput.length} events</span>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="bg-gray-900 rounded-lg p-4 max-h-64 overflow-y-auto">
+              {xssConsoleOutput.map((output, index) => (
+                <div key={index} className="mb-3 font-mono text-sm border-l-2 border-red-500 pl-3">
+                  <div className="flex items-center mb-1">
+                    <span className="text-gray-400">[{output.timestamp}]</span>
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                      output.severity === 'CRITICAL' ? 'bg-red-600 text-white' :
+                      output.severity === 'HIGH' ? 'bg-orange-600 text-white' :
+                      'bg-yellow-600 text-white'
+                    }`}>
+                      {output.type.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <div className={`mt-1 whitespace-pre-wrap ${
+                    output.type.includes('ALERT') ? 'text-red-400' :
+                    output.type.includes('COOKIE') || output.type.includes('THEFT') ? 'text-yellow-400' :
+                    output.type.includes('CONSOLE') || output.type.includes('DATA') ? 'text-cyan-400' :
+                    'text-green-400'
+                  }`}>
+                    {output.message}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={clearXSSOutput}
+              className="mt-3 px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition duration-200"
+            >
+              Clear Console
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Transfer Form */}
       <div>
