@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/useAuth';
 import { XSSConsoleProvider } from './contexts/XSSConsoleContext';
+import { SQLConsoleProvider } from './contexts/SQLConsoleContext';
 import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
@@ -24,8 +25,9 @@ function ProtectedRoute({ children }) {
 
 function App() {
   return (
-    <XSSConsoleProvider>
-      <AuthProvider>
+    <SQLConsoleProvider>
+      <XSSConsoleProvider>
+        <AuthProvider>
         <Router future={{
           v7_startTransition: true,
           v7_relativeSplatPath: true
@@ -47,8 +49,9 @@ function App() {
             </Routes>
           </div>
         </Router>
-      </AuthProvider>
-    </XSSConsoleProvider>
+        </AuthProvider>
+      </XSSConsoleProvider>
+    </SQLConsoleProvider>
   );
 }
 

