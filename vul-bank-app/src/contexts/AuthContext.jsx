@@ -29,19 +29,29 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post('/api/login', { username, password });
       
       if (response.data.success) {
-        const { token, user: userData } = response.data;
+        const { token, user: userData, sqlInjection } = response.data;
         
         // Store in localStorage (vulnerable to XSS)
         localStorage.setItem('auth_token', token);
         localStorage.setItem('user_data', JSON.stringify(userData));
         
         setUser(userData);
-        return { success: true };
+        return { 
+          success: true, 
+          sqlInjection: sqlInjection || null 
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data.message,
+          sqlInjection: response.data.sqlInjection || null
+        };
       }
     } catch (error) {
       return { 
         success: false, 
-        message: error.response?.data?.message || 'Login failed' 
+        message: error.response?.data?.message || 'Login failed',
+        sqlInjection: error.response?.data?.sqlInjection || null
       };
     }
   };

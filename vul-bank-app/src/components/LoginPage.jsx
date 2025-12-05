@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
+import { useSQLConsole } from "../contexts/SQLConsoleContext";
+import { Database, AlertTriangle } from "lucide-react";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +13,7 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { sqlConsoleOutput, addSQLOutput, clearSQLOutput } = useSQLConsole();
   const navigate = useNavigate();
 
   // Load saved username on mount
@@ -39,7 +42,59 @@ const LoginPage = () => {
     setLoading(true);
     setError("");
 
+    // Simple SQL injection detection
+    let detectedPattern = null;
+    let injectionField = null;
+    const usernameInput = formData.username || '';
+    const passwordInput = formData.password || '';
+    
+    if (usernameInput.includes("' OR 1=1") || usernameInput.includes("'--")) {
+      detectedPattern = 'ERROR_BASED';
+      injectionField = 'username';
+    } else if (passwordInput.includes("' OR 1=1") || passwordInput.includes("'--")) {
+      detectedPattern = 'ERROR_BASED';
+      injectionField = 'password';
+    } else if (usernameInput.includes('UNION SELECT')) {
+      detectedPattern = 'UNION_BASED';
+      injectionField = 'username';
+    } else if (passwordInput.includes('UNION SELECT')) {
+      detectedPattern = 'UNION_BASED';
+      injectionField = 'password';
+    } else if (usernameInput.includes("AND 1=1")) {
+      detectedPattern = 'BOOLEAN_BLIND';
+      injectionField = 'username';
+    } else if (passwordInput.includes("AND 1=1")) {
+      detectedPattern = 'BOOLEAN_BLIND';
+      injectionField = 'password';
+    }
+    
+    if (detectedPattern) {
+      const timestamp = new Date().toLocaleTimeString();
+      const payload = injectionField === 'username' ? usernameInput : passwordInput;
+      addSQLOutput({
+        timestamp,
+        type: 'SQL_INJECTION_DETECTED',
+        pattern: detectedPattern,
+        field: injectionField,
+        payload: payload.trim(),
+        severity: 'HIGH'
+      });
+    }
+
     const result = await login(formData.username, formData.password);
+
+    // Log SQL injection results
+    if (result.sqlInjection) {
+      const timestamp = new Date().toLocaleTimeString();
+      addSQLOutput({
+        timestamp,
+        type: result.sqlInjection.type,
+        details: result.sqlInjection.details,
+        query: result.sqlInjection.query,
+        success: result.success,
+        severity: result.success ? 'CRITICAL' : 'MEDIUM'
+      });
+    }
 
     if (result.success) {
       // VULNERABLE: Storing username in localStorage (client-side storage)
@@ -84,6 +139,8 @@ const LoginPage = () => {
                 create a new account
               </Link>
             </p>
+            
+
           </div>
 
           <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20">
@@ -107,7 +164,7 @@ const LoginPage = () => {
                   type="text"
                   required
                   className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Enter your username"
+                  placeholder="Try: admin'-- or ' OR 1=1 --"
                   value={formData.username}
                   onChange={handleChange}
                 />
@@ -126,7 +183,7 @@ const LoginPage = () => {
                   type="password"
                   required
                   className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Enter your password"
+                  placeholder="Try: ' OR 1=1 --"
                   value={formData.password}
                   onChange={handleChange}
                 />
@@ -171,6 +228,59 @@ const LoginPage = () => {
               </div>
             </form>
           </div>
+          
+          {/* SQL Injection Console */}
+          {sqlConsoleOutput.length > 0 && (
+            <div className="mt-6 bg-gray-900/90 backdrop-blur-md rounded-xl p-6 border border-red-500/50">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className="bg-red-100 p-2 rounded-lg mr-3">
+                    <Database className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">SQL Injection Console</h3>
+                    <p className="text-sm text-red-200">Real-time SQL attack monitoring</p>
+                  </div>
+                </div>
+                <button
+                  onClick={clearSQLOutput}
+                  className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition duration-200"
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="bg-black/50 rounded-lg p-4 max-h-64 overflow-y-auto">
+                {sqlConsoleOutput.map((output, index) => (
+                  <div key={index} className="mb-3 font-mono text-sm border-l-2 border-red-500 pl-3">
+                    <div className="flex items-center mb-1">
+                      <span className="text-gray-400">[{output.timestamp}]</span>
+                      <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                        output.severity === 'CRITICAL' ? 'bg-red-600 text-white' :
+                        output.severity === 'HIGH' ? 'bg-orange-600 text-white' :
+                        'bg-yellow-600 text-white'
+                      }`}>
+                        {output.type.replace('_', ' ')}
+                      </span>
+                    </div>
+                    {output.pattern && (
+                      <div className="text-cyan-400 mb-1">Pattern: {output.pattern}</div>
+                    )}
+                    {output.payload && (
+                      <div className="text-yellow-400 mb-1">
+                        {output.field && `Field: ${output.field} | `}Payload: {output.payload}
+                      </div>
+                    )}
+                    {output.query && (
+                      <div className="text-green-400 mb-1">Query: {output.query}</div>
+                    )}
+                    {output.details && (
+                      <div className="text-red-400">{output.details}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

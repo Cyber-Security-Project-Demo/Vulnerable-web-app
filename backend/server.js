@@ -113,6 +113,24 @@ app.post('/api/login', async (req, res) => {
     // VULNERABLE: Direct string interpolation - SQL Injection
     const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
     console.log('Executing query:', query); // Debug log
+    
+    // Simple SQL injection detection
+    let injectionType = null;
+    let injectionDetails = null;
+    
+    const input = `${username || ''} ${password || ''}`;
+    
+    if (input.includes("' OR 1=1") || input.includes("'--") || input.includes("' OR 'x'='x")) {
+      injectionType = 'ERROR_BASED';
+      injectionDetails = 'Error-based SQL injection detected - bypassing authentication';
+    } else if (input.includes('UNION SELECT')) {
+      injectionType = 'UNION_BASED';
+      injectionDetails = 'Union-based SQL injection detected - attempting data extraction';
+    } else if (input.includes("AND 1=1")) {
+      injectionType = 'BOOLEAN_BLIND';
+      injectionDetails = 'Boolean-based blind SQL injection detected';
+    }
+    
     const [rows] = await db.query(query);
     
     if (rows.length > 0) {
@@ -122,7 +140,7 @@ app.post('/api/login', async (req, res) => {
       req.session.userId = user.id;
       res.cookie('auth_token', token, { httpOnly: false }); // CSRF vulnerable
       
-      res.json({ 
+      const response = { 
         success: true, 
         token,
         user: {
@@ -132,13 +150,57 @@ app.post('/api/login', async (req, res) => {
           fullName: user.full_name,
           balance: user.balance
         }
-      });
+      };
+      
+      // Add SQL injection details if detected
+      if (injectionType) {
+        response.sqlInjection = {
+          type: injectionType,
+          details: injectionDetails,
+          query: query,
+          bypassedAuth: true
+        };
+      }
+      
+      res.json(response);
     } else {
       res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
   } catch (error) {
     console.error('Login error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    
+    // Check if it's a SQL error (part of SQL injection demonstration)
+    const isSQLError = error.code === 'ER_PARSE_ERROR' || 
+                      error.message.includes('SQL syntax') || 
+                      error.message.includes('syntax error') || 
+                      error.message.includes('different number of columns') ||
+                      error.message.includes('UNION') ||
+                      error.message.includes('near') ||
+                      error.sqlState;
+    
+    if (isSQLError) {
+      // This is expected for SQL injection demos - return as successful demonstration
+      res.json({ 
+        success: false, 
+        message: 'Invalid credentials',
+        sqlInjection: {
+          type: 'ERROR_BASED',
+          details: error.message.includes('different number of columns') ? 
+                   'UNION SELECT failed - column count mismatch revealed' : 
+                   error.message.includes('UNION') ?
+                   'UNION-based SQL injection detected - attempting data extraction' :
+                   'SQL syntax error revealed database structure',
+          error: error.message,
+          query: `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`,
+          vulnerability: 'Database error disclosure'
+        }
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        message: error.message
+      });
+    }
   }
 });
 
@@ -267,17 +329,18 @@ app.post('/api/system/search', async (req, res) => {
   }
   
   // VULNERABLE: Handle special file access commands
+  let execQuery = query;
   if (query.includes('type config.env') || query === 'type .env') {
-    query = 'type config.env'; // Redirect to our demo env file
+    execQuery = 'type config.env'; // Redirect to our demo env file
   }
   
   if (query.includes('type admin_notes')) {
-    query = 'type admin_notes.txt';
+    execQuery = 'type admin_notes.txt';
   }
   
   // VULNERABLE: Direct command execution - Command Injection
   // This simulates searching but actually executes system commands
-  exec(query, { timeout: 10000 }, (error, stdout, stderr) => {
+  exec(execQuery, { timeout: 10000 }, (error, stdout, stderr) => {
     if (error) {
       console.log(`Command error: ${error.message}`);
       // Return error output as well for demonstration
