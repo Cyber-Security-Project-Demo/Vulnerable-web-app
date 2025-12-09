@@ -220,27 +220,6 @@ const TransferMoney = () => {
                         <p className="text-xs text-gray-500">
                           @<span dangerouslySetInnerHTML={{ __html: searchUser.username }} /> {/* VULNERABLE: XSS */}
                         </p>
-                        {/* Additional XSS execution point for image-based payloads */}
-                        {!window[`xss_${searchUser.id}`] && (
-                          <div 
-                            dangerouslySetInnerHTML={{ __html: searchUser.full_name }} 
-                            style={{ position: 'absolute', left: '-9999px', visibility: 'hidden' }}
-                            ref={() => { 
-                              if (!window[`xss_${searchUser.id}`]) {
-                                window[`xss_${searchUser.id}`] = true;
-                                // Log XSS execution to web console
-                                const timestamp = new Date().toLocaleTimeString();
-                                const newOutput = {
-                                  timestamp,
-                                  type: 'XSS_RENDERED',
-                                  message: `XSS payload executed for user: ${searchUser.username}`,
-                                  severity: 'CRITICAL'
-                                };
-                                addXSSOutput(newOutput);
-                              }
-                            }}
-                          />
-                        )}
                       </div>
                     </div>
                     <button 

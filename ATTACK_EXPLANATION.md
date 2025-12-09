@@ -11,9 +11,11 @@ Detailed explanations of vulnerabilities with code references for educators and 
 3. [IDOR (Insecure Direct Object Reference)](#-attack-3-idor-insecure-direct-object-reference)
 4. [CSRF (Cross-Site Request Forgery)](#-attack-4-csrf-cross-site-request-forgery)
 5. [Command Injection](#-attack-5-command-injection)
-6. [Security Console Features](#-security-console-features)
-7. [Teaching Tips](#-teaching-tips)
-8. [Quick Reference](#-quick-reference)
+6. [Privilege Escalation](#-attack-6-privilege-escalation)
+7. [Session Hijacking](#-attack-7-session-hijacking)
+8. [Security Console Features](#-security-console-features)
+9. [Teaching Tips](#-teaching-tips)
+10. [Quick Reference](#-quick-reference)
 
 ---
 
@@ -387,6 +389,308 @@ app.post('/api/system/search', async (req, res) => {
 ---
 ---
 
+## 🔴 Attack 6: Privilege Escalation
+
+### Simple Explanation
+"Imagine a regular employee using their badge to access the CEO's office. Privilege Escalation is when a normal user gains access to admin-only features."
+
+### How It Works
+
+**Normal Access:**
+```
+Regular user requests: /api/admin/users
+Server checks: Is user an admin?
+Result: Access denied
+```
+
+**Privilege Escalation:**
+```
+Regular user requests: /api/admin/users
+Server checks: Nothing!
+Result: Admin data exposed!
+```
+
+### Vulnerable Code Location
+
+**File:** `backend/server.js`  
+**Line:** ~410-420
+
+```javascript
+// ❌ VULNERABLE CODE
+app.get('/api/admin/users', async (req, res) => {
+  // NO ADMIN CHECK!
+  // Any logged-in user can access this
+  
+  const [rows] = await db.execute('SELECT id, username, email, password, full_name, balance FROM users');
+  res.json(rows);
+});
+```
+
+**Problem:** No role-based access control - any user can access admin endpoints.
+
+### How to Demonstrate
+
+1. Login as regular user `john_doe`
+2. Open browser console (F12)
+3. Type: `fetch('http://localhost:5000/api/admin/users', {credentials: 'include'}).then(r => r.json()).then(console.log)`
+4. Show complete user database with passwords
+5. Explain: "A regular user just accessed admin-only data"
+
+### Prevention Method
+
+**File:** `backend/server.js`  
+**Fix:** Add role-based authorization
+
+```javascript
+// ✅ SECURE CODE
+const requireAdmin = (req, res, next) => {
+  if (req.session.userRole !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+};
+
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  const [rows] = await db.execute('SELECT id, username, email, full_name, balance FROM users');
+  res.json(rows);
+});
+```
+
+**Explanation:** Always verify user roles before granting access to sensitive endpoints.
+
+---
+---
+
+## 🔴 Attack 7: Session Hijacking
+
+### Simple Explanation
+"Imagine someone stealing your house key (session cookie) and making a copy. They can now enter your house anytime without your permission. Session hijacking steals your login session to impersonate you."
+
+### How It Works
+
+**Normal Session:**
+```
+1. User logs in
+2. Server creates session cookie
+3. Cookie stored in browser
+4. User makes requests with cookie
+Result: Secure authenticated session
+```
+
+**Session Hijacking:**
+```
+1. Attacker steals cookie via XSS
+2. Attacker copies cookie to their browser
+3. Attacker makes requests with stolen cookie
+4. Server thinks attacker is the victim
+Result: Complete account takeover!
+```
+
+### Vulnerable Code Locations
+
+**File:** `backend/server.js`  
+**Line:** ~30-33
+
+```javascript
+// ❌ VULNERABLE CODE
+app.use(session({
+  secret: 'weak-secret',
+  cookie: { 
+    secure: false,      // Allows HTTP (not just HTTPS)
+    httpOnly: false     // JavaScript can access cookie!
+  }
+}));
+```
+
+**Problem 1:** `httpOnly: false` allows JavaScript to read cookies via `document.cookie`  
+**Problem 2:** `secure: false` allows cookies over unencrypted HTTP  
+**Problem 3:** Weak secret makes JWT tokens easy to forge
+
+**File:** `backend/server.js`  
+**Line:** ~140
+
+```javascript
+// ❌ VULNERABLE CODE
+const token = jwt.sign(
+  { userId: user.id, username: user.username }, 
+  'weak-jwt-secret'  // Easily guessable!
+);
+res.cookie('auth_token', token, { httpOnly: false });
+```
+
+**Problem:** Weak JWT secret and non-httpOnly cookie.
+
+**File:** `vul-bank-app/src/components/TransferMoney.jsx`  
+**Line:** ~230-240
+
+```jsx
+// ❌ VULNERABLE CODE - Enables XSS for cookie theft
+<span dangerouslySetInnerHTML={{ __html: searchUser.full_name }} />
+```
+
+**Problem:** XSS vulnerability allows cookie theft via malicious scripts.
+
+### Attack Chain
+
+**Step 1: Cookie Theft via XSS**
+```html
+<!-- Attacker injects this -->
+<img src=x onerror="console.log('[XSS] cookie=',document.cookie)">
+```
+
+**Step 2: Extract Auth Token**
+```javascript
+// Stolen cookie contains:
+auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsInVzZXJuYW1lIjoiam9obl9kb2UifQ.SIGNATURE
+```
+
+**Step 3: Decode JWT (Optional)**
+```javascript
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+const payload = JSON.parse(atob(token.split('.')[1]));
+// Reveals: {userId: 2, username: "john_doe"}
+```
+
+**Step 4: Session Hijacking**
+```javascript
+// Attacker injects stolen cookie in their browser
+document.cookie = "auth_token=STOLEN_TOKEN";
+location.reload();
+// Now logged in as victim!
+```
+
+**Step 5: Account Takeover**
+```javascript
+// Access victim's data
+fetch('/api/user/2', {credentials: 'include'});
+
+// Transfer money
+fetch('/api/transfer', {
+  method: 'POST',
+  body: JSON.stringify({fromUserId: 2, toUsername: 'attacker', amount: 5000})
+});
+```
+
+### How to Demonstrate
+
+**Phase 1: Steal Cookie**
+1. Login as victim (`john_doe`)
+2. Go to Transfer Money page
+3. Search: `<img src=x onerror="console.log('[XSS] cookie=',document.cookie)">`
+4. Show XSS Console with stolen cookie
+5. Copy `auth_token` value
+
+**Phase 2: Hijack Session**
+1. Open incognito window (simulates attacker)
+2. Go to `http://localhost:5173`
+3. Open console (F12)
+4. Paste: `document.cookie = "auth_token=STOLEN_TOKEN"`
+5. Refresh page
+6. Show: Now logged in as victim!
+
+**Phase 3: Demonstrate Impact**
+1. View victim's profile and balance
+2. Access transaction history
+3. Transfer money from victim's account
+4. Access admin panel (if victim has privileges)
+5. Explain: "Complete account control without password"
+
+### Prevention Methods
+
+**File:** `backend/server.js`  
+**Fix 1:** Secure session configuration
+
+```javascript
+// ✅ SECURE CODE
+app.use(session({
+  secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
+  cookie: { 
+    secure: true,       // HTTPS only
+    httpOnly: true,     // No JavaScript access
+    sameSite: 'strict', // CSRF protection
+    maxAge: 3600000     // 1 hour expiry
+  }
+}));
+```
+
+**Fix 2:** Secure JWT implementation
+
+```javascript
+// ✅ SECURE CODE
+const token = jwt.sign(
+  { userId: user.id, username: user.username },
+  process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex'),
+  { expiresIn: '1h' }
+);
+res.cookie('auth_token', token, { 
+  httpOnly: true,
+  secure: true,
+  sameSite: 'strict'
+});
+```
+
+**Fix 3:** Prevent XSS (cookie theft vector)
+
+```jsx
+// ✅ SECURE CODE
+<span>{searchUser.full_name}</span>
+```
+
+**Fix 4:** Add session validation
+
+```javascript
+// ✅ SECURE CODE
+const validateSession = (req, res, next) => {
+  const token = req.cookies.auth_token;
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if session is still valid in database
+    const session = await db.execute(
+      'SELECT * FROM active_sessions WHERE user_id = ? AND token = ?',
+      [decoded.userId, token]
+    );
+    
+    if (!session) {
+      return res.status(401).json({ error: 'Invalid session' });
+    }
+    
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
+```
+
+**Explanation:** 
+- `httpOnly: true` prevents JavaScript from accessing cookies
+- `secure: true` ensures cookies only sent over HTTPS
+- `sameSite: 'strict'` prevents CSRF attacks
+- Strong secrets make tokens impossible to forge
+- Session validation detects stolen/expired tokens
+- XSS prevention stops cookie theft at the source
+
+### Real-World Impact
+
+**What Attackers Can Do:**
+- 🔴 Complete account takeover
+- 🔴 Access all user data
+- 🔴 Perform unauthorized transactions
+- 🔴 Change account settings
+- 🔴 Access other users' data (via IDOR)
+- 🔴 Persist access until token expires
+- 🔴 Use from any location/device
+
+**Famous Examples:**
+- Facebook XSS worm (2005) - Samy worm
+- Twitter XSS (2010) - StalkDaily attack
+- Yahoo Mail XSS (2013) - Cookie theft
+
+---
+---
+
 ## 📊 Security Console Features
 
 ### SQL Injection Console
@@ -444,6 +748,14 @@ app.post('/api/system/search', async (req, res) => {
 - `/api/transactions/:userId` - IDOR (Line ~220)
 - `/api/transfer` - CSRF (Line ~280)
 - `/api/system/search` - Command Injection (Line ~330)
+- `/api/admin/users` - Privilege Escalation (Line ~410)
+- Session configuration - Session Hijacking (Line ~30)
+
+### Attack Chain Relationships
+- **XSS → Session Hijacking** - XSS steals cookies for session hijacking
+- **Session Hijacking → IDOR** - Stolen session accesses other users' data
+- **Session Hijacking → Privilege Escalation** - Stolen admin session gains full access
+- **CSRF + Session** - Active session enables CSRF attacks
 
 ---
 

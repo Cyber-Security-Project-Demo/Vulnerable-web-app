@@ -12,6 +12,7 @@ export const useXSSConsole = () => {
 
 export const XSSConsoleProvider = ({ children }) => {
   const [xssConsoleOutput, setXssConsoleOutput] = useState([]);
+  const loggedMessages = React.useRef(new Set());
 
   useEffect(() => {
     const originalConsoleLog = console.log;
@@ -22,6 +23,12 @@ export const XSSConsoleProvider = ({ children }) => {
       const message = args.join(' ');
       
       if (message.includes('[XSS]')) {
+        const messageKey = message.substring(0, 100);
+        if (loggedMessages.current.has(messageKey)) {
+          return;
+        }
+        loggedMessages.current.add(messageKey);
+        setTimeout(() => loggedMessages.current.delete(messageKey), 2000);
 
         const timestamp = new Date().toLocaleTimeString();
         let logType = 'XSS_CONSOLE';
@@ -57,9 +64,6 @@ export const XSSConsoleProvider = ({ children }) => {
           severity: 'CRITICAL'
         };
         setXssConsoleOutput(prev => [...prev, newOutput]);
-        
-        // Also call original console.log for debugging
-        originalConsoleLog('XSS Intercepted:', cleanMessage);
         return;
       }
       
