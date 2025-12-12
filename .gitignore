@@ -62,6 +62,7 @@ demo-files/screenshots/
 *.zip
 *.rar
 *.tar.gz
+CSRF.md
 
 # Windows specific
 desktop.ini
